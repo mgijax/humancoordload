@@ -1,0 +1,92 @@
+#format: sh
+
+#
+# Configuration file for the Human Coordinate Load
+#
+# humancoordload.config.default
+#
+
+#
+#  If the MGICONFIG environment variable does not have a local override,
+#  use the default "live" settings.
+#
+if [ "${MGICONFIG}" = "" ]
+then
+    MGICONFIG=/usr/local/mgi/live/mgiconfig
+    export MGICONFIG
+fi
+
+. ${MGICONFIG}/master.config.sh
+
+# directories
+
+FILEDIR=${DATALOADSOUTPUT}/mgi/humancoordload
+INPUTDIR=${FILEDIR}/input
+LOGDIR=${FILEDIR}/logs
+RPTDIR=${FILEDIR}/reports
+ARCHIVEDIR=${FILEDIR}/archive
+OUTPUTDIR=${FILEDIR}/output
+
+export FILEDIR INPUTDIR LOGDIR RPTDIR ARCHIVEDIR OUTPUTDIR
+
+#  log files
+LOG_PROC=${LOGDIR}/humancoordload.proc.log
+LOG_DIAG=${LOGDIR}/humancoordload.diag.log
+LOG_CUR=${LOGDIR}/humancoordload.cur.log
+LOG_VAL=${LOGDIR}/humancoordload.val.log
+
+export LOG_PROC LOG_DIAG LOG_CUR LOG_VAL
+
+# job stream user
+JOBSTREAM=human_coordload
+
+export JOBSTREAM
+
+# Full path name of the Alliance file we copy to INPUTDIR
+INPUT_FILE=${DATADOWNLOADS}/fms.alliancegenome.org/download/BGI_HUMAN.json.gz
+
+# Full path name of the file we unzip and copy from INPUT_FILE_DEFAULT for use by the load
+INPUT_FILE_DEFAULT=${INPUTDIR}/BGI_HUMAN.json
+
+# Full path name of the load-ready file that is created
+# by the preprocessor
+INPUT_FILE_LOAD=${OUTPUTDIR}/human_to_load.txt
+
+export INPUT_FILE INPUT_FILE_DEFAULT INPUT_FILE_LOAD
+
+# discrepency reports
+QC_NomenMisMatch=${RPTDIR}/NomenMisMatch.rpt
+QC_ChrMisMatch=${RPTDIR}/ChrMisMatch.rpt
+QC_MultipleCoords=${RPTDIR}/MultipleCoords.rpt
+export QC_NomenMisMatch QC_ChrMisMatch QC_MultipleCoords
+
+# coordload configuration values
+COORDLOADER_SH=${COORDLOAD}/bin/coordload.sh
+COORDLOADCONFIG=${HUMANCOORDLOAD}/coordload.config
+COORDDATADIR=${INPUTDIR}
+export COORDLOADER_SH COORDLOADCONFIG COORDDATADIR
+
+# marker location cache configuration values
+LOCATIONCACHE_SH=${MRKCACHELOAD}/mrklocation.csh
+LOAD_LOCATION_CACHE=false
+
+export LOCATIONCACHE_SH LOAD_LOCATION_CACHE
+
+# data files
+???
+#PRECOORD_FILE=prehuman_coord.txt
+#COORD_FILE=human_coord.txt
+#INPUT_PRECOORD_FILE=${COORDDATADIR}/${PRECOORD_FILE}
+#INPUT_COORD_FILE=${COORDDATADIR}/${COORD_FILE}
+#export PRECOORD_FILE COORD_FILE
+#export INPUT_PRECOORD_FILE INPUT_COORD_FILE
+
+# mail
+
+MAIL_LOADNAME="Human Coordinate Load"
+export MAIL_LOADNAME
+
+# install directory
+INSTALLDIR=${HUMANCOORDLOAD}
+export INSTALLDIR
+
