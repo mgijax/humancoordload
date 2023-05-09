@@ -60,11 +60,11 @@ LOG=`pwd`/`basename $0`.log
 rm -rf ${LOG}
 touch ${LOG}
 
-USAGE="humancoordload.sh"
+USAGE="USAGE: humancoordload.sh"
 #
 #  Verify the argument(s) to the shell script.
 #
-if [ $# -ne 1 ]
+if [ $# -ne 0 ]
 then
     echo ${USAGE} | tee -a ${LOG}
     exit 1
@@ -165,10 +165,12 @@ fi
 #
 
 cleanDir ${OUTPUTDIR}
+echo "rm unzipped input file"
 
 # remove old unzipped file
-rm -rf ${INPUT_FILE}
+rm -rf ${INPUT_FILE_DEFAULT}
 
+echo "unzip input file to input directory"
 # unzip the /data/downloads file to the input directory
 echo "gunzip -c ${INPUT_FILE} > ${INPUT_FILE_DEFAULT}" | tee -a ${LOG}
 gunzip -c ${INPUT_FILE} > ${INPUT_FILE_DEFAULT}
@@ -178,19 +180,19 @@ gunzip -c ${INPUT_FILE} > ${INPUT_FILE_DEFAULT}
 
 cd ${INPUTDIR}
 
-build=`cat /data/downloads/fms.alliancegenome.org/download/BGI_HUMAN.json | grep '"assembly": ' | cut -d: -f2 | cut -d'"' -f2 | sort | uniq`
+build=`cat ${INPUT_FILE_DEFAULT} | grep '"assembly": ' | cut -d: -f2 | cut -d'"' -f2 | sort | uniq`
 
 echo "build: ${build}"
 
 #
-# process the input file
+# preprocess the input file
 #
 echo "" >> ${LOG_DIAG} 
 echo "`date`" >> ${LOG_DIAG} 
 echo "Processing input file ${INPUT_FILE_DEFAULT}" | tee -a ${LOG_DIAG}
-${HUMANCOORDLOAD}/bin/humancoordload.py | tee -a ${LOG_DIAG} ${LOG_PROC}
+${PYTHON} ${HUMANCOORDLOAD}/bin/preprocess.py | tee -a ${LOG_DIAG} ${LOG_PROC}
 STAT=$?
-checkStatus ${STAT} "${HUMANCOORDLOAD}/bin/humancoordload.py"
+checkStatus ${STAT} "${HUMANCOORDLOAD}/bin/preprocess.py"
 
 #
 # run the coordinate load
@@ -230,7 +232,8 @@ fi
 #
 if [ ${STAT} = 0 ]
 then
-    touch ${LASTRUN_FILE}
+    echo "uncomment LASTRUN_FILE touch"
+    #touch ${LASTRUN_FILE}
 fi
 
 #
