@@ -109,6 +109,12 @@ noLocationList = []
 # genes with no NCBI ID
 noNcbiIdList = []
 
+# genes with multiple coordinates
+multipleCoordsList = []
+
+# To count genes with multi coordinates
+multipleCoordsCt = 0
+
 # gene whose NCBI IDs are not in the database
 ncbiNotInMGIList = []
 
@@ -253,41 +259,41 @@ def openFiles():
     #
 
     fpNomenMisMatch.write('''
-        Report of human genes with coordinates not loaded because
-        nomenclature in the coordinates source file 
-        has become out-of-sync with nomenclature in the Entrez Gene 
-        load (regenerated on a regular basis.)
-    ''')
+Human Gene Coordinates Load - Nomenclature Mismatches
+
+Report of human genes with coordinates whose nomenclature in the coordinate input file 
+  is not the same as loaded by the Entrez Gene load in the MGI Database. These are loaded.
+
+''')
 
 
-    fpNomenMisMatch.write("\n\nHuman Gene Coordinates Load - Nomenclature Mismatches\n\n")
     fpNomenMisMatch.write("column 1 : Gene ID from NCBI\n")
     fpNomenMisMatch.write("column 2 : Symbol in Coordinates file\n")
     fpNomenMisMatch.write("column 3 : Symbol in MGI's current data\n\n")
 
     fpChrMisMatch.write('''
-        Report of human genes with coordinates not loaded because
-        chromosome in the coordinates source file 
-        has become out-of-sync with chromosome in the Entrez Gene
-        load (regenerated on a regular basis.)
-    ''')
+Human Gene Coordinates Load - Chromosome Mismatches
 
-    fpChrMisMatch.write("\n\n\tHuman Gene Coordinates Load - Chromosome Mismatches\n\n")
+Report of human genes with coordinates whose chromosome in the coordinates input file 
+  is not the same as loaded by the Entrez Gene load in the MGI Database. These are not loaded.   
+ 
+''')
+
     fpChrMisMatch.write("column 1 : Gene ID from NCBI\n")
     fpChrMisMatch.write("column 2 : Chromosome in Coordinates file\n")
     fpChrMisMatch.write("column 3 : Chromosome in MGI's current data\n\n")
 
     fpMultipleCoords.write('''
-        Report of human genes with coordinates not loaded because
-        multiple sets of the coordinates appear in the source file.
-    ''')
+Human Gene Coordinates Load - Multiple Coordinates
 
-    fpMultipleCoords.write("\n\n\tHuman Gene Coordinates Load - Multiple Coordinates\n\n")
-    fpMultipleCoords.write("column 1 : Gene ID from NCBI\n")
-    fpMultipleCoords.write("column 2 : Chromosome in Coordinates file\n")
-    fpMultipleCoords.write("column 3 : Start Coordinate in Coordinates file\n")
-    fpMultipleCoords.write("column 4 : End Coordinate in Coordinates file\n")
-    fpMultipleCoords.write("column 5 : Strand in the Coordinates file\n\n")
+Report of human genes that have multiple sets of coordinates in the input file.
+  These are not loaded.
+
+''')
+
+    fpMultipleCoords.write("Each Stanza represents a Gene's Coordinates and consists of:\n")
+    fpMultipleCoords.write("Line 1 : Gene Symbol and NCBI ID\n")
+    fpMultipleCoords.write("Lines 2-n : one set of key/value pairs for each coordinate for the gene\n\n")
 
     #
     # Select all human markers that contain EntrezGene ids
@@ -349,7 +355,8 @@ def closeFiles():
 # Throws: Nothing
 #
 def preprocess():
-    #global chrMisMatchList, nomenMisMatchList
+    global multipleCoordsCt
+
     jFile = json.load(fpInput)
 
     #
@@ -367,13 +374,17 @@ def preprocess():
             noLocationList.append('%s%s' % (allianceSymbol, CRT))
             continue
         #print('locations: %s' % locations)
-        location = locations[0]
-        chromosome = location['chromosome']
-        start = location['startPosition']
-        end =  location['endPosition']
-        strand = location['strand']
+        #if len(locations) > 1:
+        #    fpMultipleCoords.write(%s%s%s%s' % (allianceSymbo, TAB, locations)) 
+        #location = locations[0]
+        #chromosome = location['chromosome']
+        #start = location['startPosition']
+        #end =  location['endPosition']
+        #strand = location['strand']
+
         xrefs = basic['crossReferences']
         #print('xrefs: %s' % xrefs)
+
         geneID = ''
         for x in xrefs:
             if x.get('id') != None:
@@ -385,6 +396,20 @@ def preprocess():
             noNcbiIdList.append('%s%s' % (allianceSymbol, CRT))
             continue   
         #print('geneID: %s chromosome: %s start: %s end: %s strand: %s' % (geneID, chromosome, start, end, strand))
+
+        #print('locations: %s' % locations)
+        if len(locations) > 1:
+            multipleCoordsList.append('%s%s%s:%s' % (allianceSymbol, TAB, geneID, CRT))
+            multipleCoordsCt += 1
+            for l in locations:
+                multipleCoordsList.append('    %s%s' % (l, CRT))
+            continue
+        else:
+            location = locations[0]
+            chromosome = location['chromosome']
+            start = location['startPosition']
+            end =  location['endPosition']
+            strand = location['strand']
 
         # skip if the NCBI ID does not exist in MGI 
         if geneID not in mgiLookup:
@@ -407,14 +432,8 @@ def preprocess():
         if geneID not in toLoadDict:
             toLoadDict[geneID] = []
         toLoadDict[geneID].append('%s%s%s%s%s%s%s%s%s%s' % (geneID, TAB, chromosome, TAB, start, TAB, end, TAB, strand, CRT)) 
-    multiCoordCt = 0    
     for geneID in toLoadDict:
-        if len(toLoadDict[geneID]) != 1:
-            multiCoordCt += 1
-            fpMultipleCoords.write(''.join(toLoadDict[geneID]))
-        else:
             fpLoad.write(CRT.join(toLoadDict[geneID]))
-    fpMultipleCoords.write('Total: %s' % multiCoordCt)    
 
     if len(chrMisMatchList):
         fpChrMisMatch.write(''.join(chrMisMatchList))
@@ -424,6 +443,9 @@ def preprocess():
         fpNomenMisMatch.write(''.join(nomenMisMatchList))
         fpNomenMisMatch.write('Total: %s' % len(nomenMisMatchList))
 
+    if len(multipleCoordsList):
+        fpMultipleCoords.write(''.join(multipleCoordsList))
+        fpMultipleCoords.write('Total: %s' % multipleCoordsCt)
     fpLoad.close()
 
     return 0
