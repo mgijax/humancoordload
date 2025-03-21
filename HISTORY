@@ -1,4 +1,11 @@
-TAG: curatoralleleload-6-0-22-1
+TAG: humancoordload-6-0-25-1
+DATE:  03/21/2025
+STAFF: lec
+CHANGES: 
+e4g-127/Process Alliance File to Load SNP_ConsensusSnp_Marker
+        modified:   bin/humancoordload.sh
+
+TAG: humancoordload-6-0-22-1
 DATE:  08/15/2023
 STAFF: sc
 CHANGES: Fl2b project
